@@ -1,0 +1,20 @@
+# Configuration for IELTS appointment monitoring
+cities:
+  - isfahan
+
+# Exam models to check (cdielts, pdielts)
+exam_models:
+  - cdielts
+
+# Months to check (1-12, e.g., 10 for October, 11 for November)
+months:
+  - 10
+
+# Monitoring frequency in seconds
+check_frequency: 3600
+
+# Show unavailable/filled slots in output
+show_unavailable: false
+
+# Disable SSL certificate verification (use with caution)
+no_ssl_verify: false
