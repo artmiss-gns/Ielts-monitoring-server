@@ -23,8 +23,3 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ielts_monitor"]
-
-[tool.uv]
-extras = [
-  "dev"
-]

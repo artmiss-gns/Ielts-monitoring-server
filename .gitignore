@@ -110,3 +110,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+test.ipynb
+uv.lock
+
+
+sample-html-page2.html

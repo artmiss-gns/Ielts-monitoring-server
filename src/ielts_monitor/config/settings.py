@@ -8,7 +8,7 @@ class ScraperConfig(BaseModel):
     """Configuration for the scraper."""
     
     # Base URL for the IELTS appointment website
-    base_url: str = "https://irsafam.org/timetable"
+    base_url: str = "https://irsafam.org/ielts/timetable"
     
     # User agent to mimic a real browser
     user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -35,7 +35,7 @@ class MonitoringConfig(BaseModel):
     # Exam models to check (e.g., "cdielts", "pdielts")
     exam_models: List[str] = Field(default_factory=lambda: ["cdielts", "pdielts"])
     
-    # Months to check (format: YYYY-MM)
+    # Months to check (format: MM - just the month number 01-12)
     months: List[str] = Field(default_factory=lambda: [])
     
     # Check frequency in seconds

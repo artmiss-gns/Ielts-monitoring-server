@@ -126,12 +126,30 @@ class IELTSClient:
             # Disable urllib3 warnings about unverified HTTPS requests
             requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
     
-    def fetch_page(self, city: str, exam_model: str, month: Optional[str] = None) -> str:
-        """Fetch a page for a specific city, exam model, and optional month."""
+    def fetch_page(self, cities: List[str], exam_models: List[str], months: Optional[List[str]] = None) -> str:
+        """Fetch a page for specified cities, exam models, and optional months."""
         # Construct URL with correct parameter formatting
-        url = f"{self.BASE_URL}?city%5B%5D={city}&model%5B%5D={exam_model}"
-        if month:
-            url += f"&month%5B%5D={month}"
+        from urllib.parse import urlencode
+        
+        params = {}
+        for city in cities:
+            if 'city[]' not in params:
+                params['city[]'] = []
+            params['city[]'].append(city)
+        
+        for model in exam_models:
+            if 'model[]' not in params:
+                params['model[]'] = []
+            params['model[]'].append(model)
+        
+        if months:
+            for month in months:
+                if 'month[]' not in params:
+                    params['month[]'] = []
+                params['month[]'].append(month)
+        
+        query_string = urlencode(params, doseq=True)
+        url = f"{self.BASE_URL}?{query_string}"
         
         logger.info(f"Fetching URL: {url}")
         
@@ -151,8 +169,8 @@ class IELTSClient:
                     logger.error(f"Failed to fetch {url} after {max_retries} attempts: {e}")
                     return ""
     
-    def fetch_all_pages(self, cities: List[str], exam_models: List[str], use_sample: bool = False) -> Dict[str, str]:
-        """Fetch all pages for the specified cities and exam models."""
+    def fetch_all_pages(self, cities: List[str], exam_models: List[str], months: Optional[List[str]] = None, use_sample: bool = False) -> Dict[str, str]:
+        """Fetch all pages for the specified cities, exam models, and months."""
         results = {}
         
         if use_sample:
@@ -161,26 +179,48 @@ class IELTSClient:
                 with open('sample-html-page.html', 'r', encoding='utf-8') as f:
                     sample_html = f.read()
                     
-                for city in cities:
-                    for exam_model in exam_models:
-                        key = f"{city}_{exam_model}"
-                        results[key] = sample_html
-                        logger.info(f"Using sample HTML for {key}")
+                # Create a key for the combination
+                key = f"{'_'.join(cities)}_{'_'.join(exam_models)}"
+                results[key] = sample_html
+                logger.info(f"Using sample HTML for {key}")
             except Exception as e:
                 logger.error(f"Failed to read sample HTML file: {e}")
         else:
             # Make real requests
-            for city in cities:
-                for exam_model in exam_models:
-                    key = f"{city}_{exam_model}"
-                    html = self.fetch_page(city, exam_model)
-                    
-                    if html:
-                        results[key] = html
-                        # Be nice to the server
-                        time.sleep(2)
+            # Create a key for the combination
+            key = f"{'_'.join(cities)}_{'_'.join(exam_models)}"
+            html = self.fetch_page(cities, exam_models, months)
+            
+            if html:
+                results[key] = html
+                # Be nice to the server
+                time.sleep(2)
         
         return results
+
+    def _construct_url(self, cities: List[str], exam_models: List[str], months: Optional[List[str]] = None) -> str:
+        """Construct URL with proper parameter formatting."""
+        from urllib.parse import urlencode
+        
+        params = {}
+        for city in cities:
+            if 'city[]' not in params:
+                params['city[]'] = []
+            params['city[]'].append(city)
+        
+        for model in exam_models:
+            if 'model[]' not in params:
+                params['model[]'] = []
+            params['model[]'].append(model)
+        
+        if months:
+            for month in months:
+                if 'month[]' not in params:
+                    params['month[]'] = []
+                params['month[]'].append(month)
+        
+        query_string = urlencode(params, doseq=True)
+        return f"{self.BASE_URL}?{query_string}"
 
 def clean_persian_text(text: str) -> str:
     """Clean Persian text from logs, keeping only important information."""
@@ -245,8 +285,11 @@ class AvailabilityParser:
         }
         
         for key, html in html_dict.items():
-            city, exam_model = key.split("_")
-            slots = self._parse_html(html, city, exam_model)
+            cities, exam_models = key.split("_")
+            # Convert back to lists since the key format is "city1_city2_model1_model2"
+            city_list = cities.split('_')
+            model_list = exam_models.split('_')
+            slots = self._parse_html(html, city_list, model_list)
             
             # Separate available and unavailable slots
             for slot in slots:
@@ -256,8 +299,8 @@ class AvailabilityParser:
                     all_slots["unavailable"].append(slot)
         
         return all_slots
-    
-    def _parse_html(self, html: str, city: str, exam_model: str) -> List[ExamSlot]:
+
+    def _parse_html(self, html: str, cities: List[str], exam_models: List[str]) -> List[ExamSlot]:
         """Parse HTML to find all slots (both available and unavailable)."""
         if not html:
             return []
@@ -315,7 +358,7 @@ class AvailabilityParser:
                     location=clean_persian_text(location),
                     exam_type=exam_type,
                     price=price,
-                    url=f"{IELTSClient.BASE_URL}?city%5B%5D={city}&model%5B%5D={exam_model}",
+                    url=url,
                     is_available=is_available
                 )
                 
@@ -327,12 +370,9 @@ class AvailabilityParser:
         return slots
 
 def format_month(month_num: int) -> str:
-    """Format month number to YYYY-MM format required by the API."""
-    current_year = datetime.now().year
-    # If the month is in the past, use next year
-    if month_num < datetime.now().month:
-        current_year += 1
-    return f"{current_year}-{month_num:02d}"
+    """Format month number to MM format required by the API."""
+    # The API expects just the month number (01-12), not YYYY-MM
+    return f"{month_num:02d}"
 
 def run_monitor(cities: List[str], exam_models: List[str], months: List[str], check_frequency: int = 3600, once: bool = False, verbose: bool = False, no_ssl_verify: bool = False, use_sample: bool = False, show_unavailable: bool = False) -> None:
     """Run the monitoring application."""
@@ -348,7 +388,7 @@ def run_monitor(cities: List[str], exam_models: List[str], months: List[str], ch
     if use_sample:
         logger.info("Using sample data: True")
     
-    # Convert month numbers to YYYY-MM format
+    # Convert month numbers to MM format (API expects just month number, not YYYY-MM)
     formatted_months = []
     if months:
         for month in months:
@@ -358,7 +398,7 @@ def run_monitor(cities: List[str], exam_models: List[str], months: List[str], ch
                 formatted_month = format_month(month_num)
                 formatted_months.append(formatted_month)
             except (ValueError, TypeError):
-                # If it's already a string in YYYY-MM format, keep it
+                # If it's already a string in MM format, keep it
                 formatted_months.append(month)
     
     logger.info(f"Monitoring months: {formatted_months or 'all available'}")
@@ -376,7 +416,7 @@ def run_monitor(cities: List[str], exam_models: List[str], months: List[str], ch
                     for month in formatted_months:
                         try:
                             # Fetch page with month parameter
-                            url = f"{IELTSClient.BASE_URL}?city%5B%5D={city}&model%5B%5D={exam_model}&month%5B%5D={month}"
+                            url = client._construct_url([city], [exam_model], [month])
                             logger.info(f"Fetching URL: {url}")
                             html_content = ""
                             

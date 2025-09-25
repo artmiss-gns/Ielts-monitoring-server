@@ -2,7 +2,7 @@
 
 import time
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import requests
 from requests.exceptions import RequestException
@@ -31,34 +31,58 @@ class IELTSClient:
             "Connection": "keep-alive",
         })
         
-    def _construct_url(self, city: str, exam_model: str, month: Optional[str] = None) -> str:
+    def _construct_url(self, cities: List[str], exam_models: List[str], months: Optional[List[str]] = None) -> str:
         """Construct the URL for the IELTS appointment page.
         
         Args:
-            city: City name
-            exam_model: Exam model (e.g., "cdielts", "pdielts")
-            month: Month in YYYY-MM format (optional)
+            cities: List of city names
+            exam_models: List of exam models (e.g., "cdielts", "pdielts")
+            months: List of months in YYYY-MM format (optional)
             
         Returns:
             URL for the IELTS appointment page
         """
-        url = f"{self.config.scraper.base_url}/{city}/{exam_model}"
-        if month:
-            url = f"{url}/{month}"
+        from urllib.parse import urlencode
+        
+        params = {}
+        
+        # Add cities (can be multiple)
+        for city in cities:
+            if 'city[]' not in params:
+                params['city[]'] = []
+            params['city[]'].append(city)
+        
+        # Add exam models (can be multiple)
+        for model in exam_models:
+            if 'model[]' not in params:
+                params['model[]'] = []
+            params['model[]'].append(model)
+        
+        # Add months (can be multiple)
+        if months:
+            for month in months:
+                if 'month[]' not in params:
+                    params['month[]'] = []
+                params['month[]'].append(month)
+        
+        # Construct URL with query parameters
+        query_string = urlencode(params, doseq=True)
+        url = f"{self.config.scraper.base_url}?{query_string}"
+        
         return url
     
-    def fetch_page(self, city: str, exam_model: str, month: Optional[str] = None) -> Optional[str]:
+    def fetch_page(self, cities: List[str], exam_models: List[str], months: Optional[List[str]] = None) -> Optional[str]:
         """Fetch the HTML content of the IELTS appointment page.
         
         Args:
-            city: City name
-            exam_model: Exam model (e.g., "cdielts", "pdielts")
-            month: Month in YYYY-MM format (optional)
+            cities: List of city names
+            exam_models: List of exam models (e.g., "cdielts", "pdielts")
+            months: List of months in YYYY-MM format (optional)
             
         Returns:
             HTML content of the page or None if the request failed
         """
-        url = self._construct_url(city, exam_model, month)
+        url = self._construct_url(cities, exam_models, months)
         retries = 0
         
         while retries <= self.config.scraper.max_retries:
@@ -94,14 +118,14 @@ class IELTSClient:
             for exam_model in self.config.monitoring.exam_models:
                 if self.config.monitoring.months:
                     for month in self.config.monitoring.months:
-                        url = self._construct_url(city, exam_model, month)
-                        html = self.fetch_page(city, exam_model, month)
+                        url = self._construct_url([city], [exam_model], [month])
+                        html = self.fetch_page([city], [exam_model], [month])
                         results[url] = html
                         # Add delay between requests
                         time.sleep(self.config.scraper.request_delay)
                 else:
-                    url = self._construct_url(city, exam_model)
-                    html = self.fetch_page(city, exam_model)
+                    url = self._construct_url([city], [exam_model])
+                    html = self.fetch_page([city], [exam_model])
                     results[url] = html
                     # Add delay between requests
                     time.sleep(self.config.scraper.request_delay)
