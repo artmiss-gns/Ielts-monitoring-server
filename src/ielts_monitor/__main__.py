@@ -4,11 +4,20 @@ import argparse
 import logging
 import sys
 import time
+import asyncio
 from typing import List, Optional
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load environment variables from .env file
+except ImportError:
+    # python-dotenv not installed, will use system environment variables
+    pass
 
 from src.ielts_monitor.config import Config, default_config
 from src.ielts_monitor.scraper import IELTSClient
 from src.ielts_monitor.parser import AvailabilityParser
+from src.ielts_monitor.notification import NotificationService
 from src.ielts_monitor.utils import setup_logger
 
 # Set up logger
@@ -61,6 +70,12 @@ def parse_args() -> argparse.Namespace:
         help="Enable verbose logging"
     )
     
+    parser.add_argument(
+        "--no-notifications",
+        action="store_true",
+        help="Disable notifications"
+    )
+    
     return parser.parse_args()
 
 
@@ -86,13 +101,16 @@ def update_config_from_args(config: Config, args: argparse.Namespace) -> Config:
     if args.check_frequency:
         config.monitoring.check_frequency = args.check_frequency
     
+    if args.no_notifications:
+        config.monitoring.notification.enabled = False
+    
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     
     return config
 
 
-def run_monitor(config: Config, run_once: bool = False) -> None:
+async def run_monitor(config: Config, run_once: bool = False) -> None:
     """Run the monitoring application.
     
     Args:
@@ -101,11 +119,13 @@ def run_monitor(config: Config, run_once: bool = False) -> None:
     """
     client = IELTSClient(config)
     parser = AvailabilityParser()
+    notification_service = NotificationService(config)
     
     logger.info("Starting IELTS appointment monitoring")
     logger.info(f"Monitoring cities: {config.monitoring.cities}")
     logger.info(f"Monitoring exam models: {config.monitoring.exam_models}")
     logger.info(f"Monitoring months: {config.monitoring.months or 'all available'}")
+    logger.info(f"Notifications enabled: {config.monitoring.notification.enabled}")
     
     try:
         while True:
@@ -115,7 +135,15 @@ def run_monitor(config: Config, run_once: bool = False) -> None:
             html_dict = client.fetch_all_pages()
             
             # Find available slots
-            available_slots = parser.find_available_slots(html_dict)
+            all_slots = []
+            for url, html in html_dict.items():
+                if html:
+                    slots = parser.parse_html(html, url)
+                    all_slots.extend(slots)
+            
+            # Separate available and unavailable slots
+            available_slots = [slot for slot in all_slots if slot.is_available]
+            unavailable_slots = [slot for slot in all_slots if not slot.is_available]
             
             if available_slots:
                 logger.info(f"Found {len(available_slots)} available slots!")
@@ -129,8 +157,17 @@ def run_monitor(config: Config, run_once: bool = False) -> None:
                     logger.info(f"  Exam Type: {slot.exam_type}")
                     logger.info(f"  Price: {slot.price}")
                     logger.info(f"  URL: {slot.url}")
+                
+                # Send notifications for new slots
+                await notification_service.process_slots(all_slots)
             else:
                 logger.info("No available slots found.")
+            
+            # Print unavailable slots if requested
+            if config.monitoring.show_unavailable and unavailable_slots:
+                logger.info(f"Found {len(unavailable_slots)} unavailable slots")
+                for slot in unavailable_slots:
+                    logger.info(f"  Unavailable: {slot.date} | {slot.time_of_day} | {slot.location}")
             
             if run_once:
                 break
@@ -151,7 +188,9 @@ def main() -> None:
     """Main entry point."""
     args = parse_args()
     config = update_config_from_args(default_config, args)
-    run_monitor(config, args.once)
+    
+    # Run the async monitoring function
+    asyncio.run(run_monitor(config, args.once))
 
 
 if __name__ == "__main__":

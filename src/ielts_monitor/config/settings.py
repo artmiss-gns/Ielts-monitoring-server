@@ -26,6 +26,28 @@ class ScraperConfig(BaseModel):
     retry_delay: float = 2.0
 
 
+class NotificationConfig(BaseModel):
+    """Configuration for notifications."""
+    
+    # Enable notifications
+    enabled: bool = True
+    
+    # Telegram bot token (from environment variable)
+    bot_token: Optional[str] = None
+    
+    # Telegram chat ID (from environment variable)
+    chat_id: Optional[str] = None
+    
+    # Notification message format
+    message_format: str = "markdown"
+    
+    # Rate limiting: minimum seconds between notifications
+    rate_limit_seconds: int = 60
+    
+    # Maximum notifications per hour
+    max_notifications_per_hour: int = 50
+
+
 class MonitoringConfig(BaseModel):
     """Configuration for the monitoring application."""
     
@@ -41,8 +63,11 @@ class MonitoringConfig(BaseModel):
     # Check frequency in seconds
     check_frequency: int = 3600  # Default: check every hour
     
+    # Show unavailable/filled slots in output
+    show_unavailable: bool = False
+    
     # Notification settings
-    notification_enabled: bool = True
+    notification: NotificationConfig = Field(default_factory=NotificationConfig)
 
 
 class Config(BaseModel):

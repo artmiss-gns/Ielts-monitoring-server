@@ -112,6 +112,7 @@ dmypy.json
 .pyre/
 test.ipynb
 uv.lock
+notification_state.json
 
 
 sample-html-page2.html

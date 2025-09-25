@@ -12,6 +12,8 @@ A lightweight application that monitors the Irsafam website (https://irsafam.org
 - **Resource-efficient Implementation**: No headless browsers required
 - **Responsible Scraping**: Configurable delays to respect website limits
 - **Containerized**: For easy deployment (Dockerfile included)
+- **Telegram Notifications**: Get instant notifications when new slots become available
+- **Smart Tracking**: Avoids duplicate notifications and handles slot availability changes
 
 ## Installation
 
@@ -25,13 +27,26 @@ A lightweight application that monitors the Irsafam website (https://irsafam.org
 
 2. Install the required dependencies:
    ```bash
-   pip install pyyaml requests beautifulsoup4
+   pip install -r requirements.txt
+   ```
+
+   For notifications (optional):
+   ```bash
+   pip install python-telegram-bot
    ```
 
    Alternatively, we recommend using [uv](https://github.com/astral-sh/uv) for faster installation:
    ```bash
-   uv pip install pyyaml requests beautifulsoup4
+   uv pip install -r requirements.txt
+   uv pip install python-telegram-bot
    ```
+
+### Using Docker
+
+Build the Docker image:
+```bash
+docker build -t ielts-monitor .
+```
 
 ## Configuration
 
@@ -62,6 +77,46 @@ no_ssl_verify: false
 ```
 
 Any command-line arguments you provide will override the corresponding settings from the config file.
+
+## Telegram Notifications Setup
+
+To receive notifications when new IELTS slots become available:
+
+1. **Create a Telegram Bot:**
+   - Message @BotFather on Telegram
+   - Send `/newbot` and follow the instructions
+   - Save the bot token you receive
+
+2. **Create a Channel:**
+   - Create a new channel or use an existing one
+   - Add your bot as an administrator to the channel
+   - Get the channel's chat ID (you can use @userinfobot for this)
+
+3. **Set Environment Variables:**
+   Create a `.env` file in the project root:
+   ```bash
+   TELEGRAM_BOT_TOKEN=your_bot_token_here
+   TELEGRAM_CHAT_ID=your_chat_id_here
+   ```
+
+   Or set them as environment variables:
+   ```bash
+   export TELEGRAM_BOT_TOKEN=your_bot_token_here
+   export TELEGRAM_CHAT_ID=your_chat_id_here
+   ```
+
+4. **Test Notifications:**
+   ```bash
+   python -m src.ielts_monitor scan --cities tehran --exam-models cdielts
+   ```
+
+### Notification Features
+
+- **Smart Tracking**: Only notifies about truly new slots, avoiding duplicates
+- **State Persistence**: Remembers notified slots to prevent re-notifications
+- **Auto-recovery**: If a slot gets filled and becomes available again, you'll be notified
+- **Rich Messages**: Formatted notifications with all slot details
+- **Error Handling**: Graceful handling of network issues and API limits
 
 ## Usage
 
@@ -101,6 +156,11 @@ Show unavailable slots in the output:
 python run.py monitor --show-unavailable
 ```
 
+Disable notifications:
+```bash
+python run.py monitor --no-notifications
+```
+
 Disable SSL certificate verification (useful if encountering SSL issues):
 ```bash
 python run.py monitor --no-ssl-verify
@@ -138,13 +198,9 @@ Both commands support these options (check `--help` for full details):
 - `--show-unavailable`: Show unavailable/filled slots
 - `--no-ssl-verify`: Disable SSL certificate verification
 - `--use-sample`: Use sample data (scan command only)
+- `--no-notifications`: Disable notifications (monitor command only)
 
 ### Using Docker
-
-Build the Docker image:
-```bash
-docker build -t ielts-monitor .
-```
 
 Run with default settings from config.yaml:
 ```bash
@@ -154,6 +210,7 @@ docker run ielts-monitor
 Run with custom options:
 ```bash
 docker run ielts-monitor scan --cities tehran --exam-models cdielts --months 10 11 --show-unavailable
+```
 
 ## Output Format
 
