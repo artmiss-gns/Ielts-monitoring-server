@@ -1,4 +1,10 @@
 # Configuration for IELTS appointment monitoring
+
+# Base URL for the IELTS website (use 'localhost' for simulation server)
+# Options: 'https://irsafam.org/ielts/timetable' (real website) or 'http://localhost:8000' (simulation server)
+base_url: 'https://irsafam.org/ielts/timetable'
+# base_url: 'http://localhost:8000'  # Testing with simulation server
+
 cities:
   - isfahan
 
@@ -9,9 +15,11 @@ exam_models:
 # Months to check (1-12, e.g., 10 for October, 11 for November)
 months:
   - 10
+  # - 11
+  # - 8
 
-# Monitoring frequency in seconds
-check_frequency: 3600
+# Monitoring frequency in seconds (300 = 5 minutes, recommended for production)
+check_frequency: 60
 
 # Show unavailable/filled slots in output
 show_unavailable: false
