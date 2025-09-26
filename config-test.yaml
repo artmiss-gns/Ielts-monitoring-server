@@ -1,0 +1,12 @@
+# Test configuration for simulation server with notifications
+base_url: 'http://localhost:8000'
+cities:
+  - isfahan
+exam_models:
+  - cdielts
+months:
+  - 10
+  - 11
+check_frequency: 30
+show_unavailable: true
+no_ssl_verify: false
