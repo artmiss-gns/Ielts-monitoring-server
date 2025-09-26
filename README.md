@@ -36,12 +36,51 @@ A professional, production-ready application that monitors the Irsafam website (
    pip install -r requirements.txt
    ```
 
-### Using Docker
+### Using Docker (Recommended for Production)
 
-Build the Docker image:
+#### Quick Start with Docker Compose
+
 ```bash
-docker build -t ielts-monitor .
+# Clone and start monitoring
+git clone <repository-url>
+cd ielts-monitoring2
+
+# Start with default configuration
+docker-compose up -d
+
+# View logs
+docker-compose logs -f ielts-monitor
 ```
+
+#### Using Makefile (Easiest)
+
+```bash
+# Quick production deployment
+make prod-deploy
+
+# Development setup
+make quick-dev
+
+# Show all available commands
+make help
+```
+
+#### Manual Docker Build
+
+```bash
+# Build production image
+docker build -t ielts-monitor .
+
+# Run with volume mounts
+docker run -d \
+  --name ielts-monitor \
+  -v $(pwd)/config.yaml:/app/config/config.yaml:ro \
+  -v ielts_data:/app/data \
+  -v ielts_logs:/app/logs \
+  ielts-monitor
+```
+
+For comprehensive Docker documentation, see [Docker Guide](docs/DOCKER_GUIDE.md).
 
 ## Configuration
 
