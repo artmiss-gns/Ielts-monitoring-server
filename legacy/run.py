@@ -103,10 +103,9 @@ def parse_args() -> argparse.Namespace:
 class IELTSClient:
     """Client for fetching IELTS appointment data from the website."""
     
-    BASE_URL = "https://irsafam.org/ielts/timetable"
-    
-    def __init__(self, no_ssl_verify: bool = False):
-        """Initialize the client with improved SSL handling."""
+    def __init__(self, base_url: str = "https://irsafam.org/ielts/timetable", no_ssl_verify: bool = False):
+        """Initialize the client with configurable base URL and improved SSL handling."""
+        self.base_url = base_url.rstrip('/') + "/ielts/timetable"
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -149,7 +148,7 @@ class IELTSClient:
                 params['month[]'].append(month)
         
         query_string = urlencode(params, doseq=True)
-        url = f"{self.BASE_URL}?{query_string}"
+        url = f"{self.base_url}?{query_string}"
         
         logger.info(f"Fetching URL: {url}")
         
@@ -220,7 +219,7 @@ class IELTSClient:
                 params['month[]'].append(month)
         
         query_string = urlencode(params, doseq=True)
-        return f"{self.BASE_URL}?{query_string}"
+        return f"{self.base_url}?{query_string}"
 
 def clean_persian_text(text: str) -> str:
     """Clean Persian text from logs, keeping only important information."""
@@ -374,13 +373,14 @@ def format_month(month_num: int) -> str:
     # The API expects just the month number (01-12), not YYYY-MM
     return f"{month_num:02d}"
 
-def run_monitor(cities: List[str], exam_models: List[str], months: List[str], check_frequency: int = 3600, once: bool = False, verbose: bool = False, no_ssl_verify: bool = False, use_sample: bool = False, show_unavailable: bool = False) -> None:
+def run_monitor(cities: List[str], exam_models: List[str], months: List[str], check_frequency: int = 3600, once: bool = False, verbose: bool = False, no_ssl_verify: bool = False, use_sample: bool = False, show_unavailable: bool = False, base_url: str = "https://irsafam.org/ielts/timetable") -> None:
     """Run the monitoring application."""
-    client = IELTSClient(no_ssl_verify=no_ssl_verify)
+    client = IELTSClient(base_url=base_url, no_ssl_verify=no_ssl_verify)
     parser = AvailabilityParser()
     
     logger.info(f"SSL verification bypassed: {no_ssl_verify}")
     logger.info(f"Show unavailable slots: {show_unavailable}")
+    logger.info(f"Base URL: {base_url}")
     if not once:
         logger.info("🔍 Starting IELTS appointment monitoring")
     logger.info(f"Monitoring cities: {cities}")
@@ -566,23 +566,23 @@ def main() -> None:
     
     if args.verbose:
         logger.setLevel(logging.DEBUG)
-    
     # Merge command line arguments with config file values
     cities = args.cities if hasattr(args, 'cities') and args.cities else config['cities']
     exam_models = args.exam_models if hasattr(args, 'exam_models') and args.exam_models else config['exam_models']
     months = args.months if hasattr(args, 'months') and args.months else config['months']
+    base_url = config.get('base_url', 'https://irsafam.org')
     
     # Determine check frequency based on command
     if args.command == 'monitor':
-        check_frequency = args.check_frequency if hasattr(args, 'check_frequency') and args.check_frequency else config['monitoring']['check_frequency']
+        check_frequency = args.check_frequency if hasattr(args, 'check_frequency') and args.check_frequency else config['check_frequency']
         once = False
     else:  # scan command
         check_frequency = 0
         once = True
     
     # Determine other flags
-    no_ssl_verify = args.no_ssl_verify if hasattr(args, 'no_ssl_verify') else config['monitoring']['no_ssl_verify']
-    show_unavailable = args.show_unavailable if hasattr(args, 'show_unavailable') else config['monitoring']['show_unavailable']
+    no_ssl_verify = args.no_ssl_verify if hasattr(args, 'no_ssl_verify') else config['no_ssl_verify']
+    show_unavailable = args.show_unavailable if hasattr(args, 'show_unavailable') else config['show_unavailable']
     
     # Use sample data only for scan command
     use_sample = args.use_sample if hasattr(args, 'use_sample') and args.use_sample else False
@@ -596,7 +596,8 @@ def main() -> None:
         verbose=args.verbose if hasattr(args, 'verbose') else False,
         no_ssl_verify=no_ssl_verify,
         use_sample=use_sample,
-        show_unavailable=show_unavailable
+        show_unavailable=show_unavailable,
+        base_url=base_url
     )
 
 if __name__ == "__main__":

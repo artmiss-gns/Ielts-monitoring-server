@@ -1,0 +1,53 @@
+[
+  {
+    "date": "2025-10-29",
+    "time": "صبح (۰۸:۳۰ - ۱۱:۳۰)",
+    "location": "اصفهان (ایده نواندیش)",
+    "city": "Isfahan",
+    "examType": "cdielts - (Ac/Gt)",
+    "price": "۲۹۱,۱۱۵,۰۰۰ ریال",
+    "persianDate": "۱۴۰۴/۰۹/۰۴",
+    "status": "available",
+    "filledIndicators": [],
+    "availableIndicators": [
+      "قابل ثبت نام",
+      "active-button"
+    ],
+    "registrationUrl": "http://localhost:8000/ielts/register/custom-slot-1",
+    "id": "927d883a-ead9-4fc2-8d5e-c6ee1ab81e19"
+  },
+  {
+    "date": "2025-10-20",
+    "time": "صبح (۰۸:۳۰ - ۱۱:۳۰)",
+    "location": "اصفهان (ایده نواندیش)",
+    "city": "Isfahan",
+    "examType": "cdielts - (Ac/Gt)",
+    "price": "۲۹۱,۱۱۵,۰۰۰ ریال",
+    "persianDate": "۱۴۰۴/۰۹/۰۴",
+    "status": "available",
+    "filledIndicators": [],
+    "availableIndicators": [
+      "قابل ثبت نام",
+      "active-button"
+    ],
+    "registrationUrl": "http://localhost:8000/ielts/register/custom-slot-1",
+    "id": "02ec4c61-0371-465d-aded-79c4b448e10f"
+  },
+  {
+    "date": "2025-10-20",
+    "time": "صبح (۰۹:۳۰ - ۱۱:۳۰)",
+    "location": "اصفهان (ایده نواندیش)",
+    "city": "Isfahan",
+    "examType": "cdielts - (Ac/Gt)",
+    "price": "۲۹۱,۱۱۵,۰۰۰ ریال",
+    "persianDate": "۱۴۰۴/۰۹/۰۴",
+    "status": "available",
+    "filledIndicators": [],
+    "availableIndicators": [
+      "قابل ثبت نام",
+      "active-button"
+    ],
+    "registrationUrl": "http://localhost:8000/ielts/register/custom-slot-1",
+    "id": "33041757-5b49-41b2-ad94-07053cdb667e"
+  }
+]

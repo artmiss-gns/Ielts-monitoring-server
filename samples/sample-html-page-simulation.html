@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Time Table - Sample Data</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .exams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .exam__item {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            display: block;
+        }
+
+        .exam__item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .exam__item.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .exam__item.available {
+            border-left: 5px solid #28a745;
+        }
+
+        .exam__item.filled {
+            border-left: 5px solid #dc3545;
+        }
+
+        .exam__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .exam__title h5 {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .exam__date {
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .exam__time {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .exam__details {
+            margin-bottom: 15px;
+        }
+
+        .exam__type {
+            background-color: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .exam__price {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .exam__buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status-available {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-filled {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>IELTS Time Table</h1>
+            <p>Sample Data for Testing</p>
+        </div>
+
+        <div class="filters">
+            <h3>Filter Options</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="city-filter">شهر</label>
+                    <select id="city-filter">
+                        <option value="">همه شهرها</option>
+                        <option value="Tehran">تهران</option>
+                        <option value="Isfahan">اصفهان</option>
+                        <option value="Shiraz">شیراز</option>
+                        <option value="Mashhad">مشهد</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter">وضعیت</label>
+                    <select id="status-filter">
+                        <option value="">همه</option>
+                        <option value="available">قابل ثبت نام</option>
+                        <option value="filled">تکمیل ظرفیت</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="month-filter">ماه</label>
+                    <input type="month" id="month-filter">
+                </div>
+            </div>
+        </div>
+
+        <div id="exams-container" class="exams-grid">
+            <!-- Available Appointments -->
+            <a href="#" class="exam__item ielts available" onclick="return false">
+                <div class="status-indicator status-available">قابل ثبت نام</div>
+                <div class="exam__header">
+                    <div class="exam__title">
+                        <h5>اصفهان (ایده نواندیش)</h5>
+                    </div>
+                </div>
+                <div class="exam__date">
+                    <time>
+                        <span>2025-11-10</span>
+                        <span class="farsi_date">۱۴۰۴/۰۸/۱۹</span>
+                    </time>
+                </div>
+                <div class="exam__time">
+                    <em>ظهر (۱۳:۳۰ - ۱۶:۳۰)</em>
+                </div>
+                <div class="exam__details">
+                    <span class="exam__type">cdielts - (Ac/Gt)</span>
+                </div>
+                <div class="exam__price">
+                    ۲۹۱,۱۱۵,۰۰۰ ریال
+                </div>
+                <div class="exam__buttons">
+                    <span class="btn btn-primary">قابل ثبت نام</span>
+                    <span class="btn btn-primary">active-button</span>
+                </div>
+            </a>
+
+            <a href="#" class="exam__item ielts available" onclick="return false">
+                <div class="status-indicator status-available">قابل ثبت نام</div>
+                <div class="exam__header">
+                    <div class="exam__title">
+                        <h5>تهران (مرکز آزمون)</h5>
+                    </div>
+                </div>
+                <div class="exam__date">
+                    <time>
+                        <span>2025-11-17</span>
+                        <span class="farsi_date">۱۴۰۴/۰۸/۲۶</span>
+                    </time>
+                </div>
+                <div class="exam__time">
+                    <em>صبح (۰۹:۰۰ - ۱۲:۰۰)</em>
+                </div>
+                <div class="exam__details">
+                    <span class="exam__type">cdielts - (Ac/Gt)</span>
+                </div>
+                <div class="exam__price">
+                    ۲۹۱,۱۱۵,۰۰۰ ریال
+                </div>
+                <div class="exam__buttons">
+                    <span class="btn btn-primary">قابل ثبت نام</span>
+                    <span class="btn btn-primary">active-button</span>
+                </div>
+            </a>
+
+            <!-- Filled Appointments -->
+            <a href="#" class="exam__item ielts filled disabled" onclick="return false">
+                <div class="status-indicator status-filled">تکمیل ظرفیت</div>
+                <div class="exam__header">
+                    <div class="exam__title">
+                        <h5>اصفهان (ایده نواندیش)</h5>
+                    </div>
+                </div>
+                <div class="exam__date">
+                    <time>
+                        <span>2025-10-27</span>
+                        <span class="farsi_date">۱۴۰۴/۰۸/۰۵</span>
+                    </time>
+                </div>
+                <div class="exam__time">
+                    <em>ظهر (۱۳:۳۰ - ۱۶:۳۰)</em>
+                </div>
+                <div class="exam__details">
+                    <span class="exam__type">cdielts - (Ac/Gt)</span>
+                </div>
+                <div class="exam__price">
+                    ۲۹۱,۱۱۵,۰۰۰ ریال
+                </div>
+                <div class="exam__buttons">
+                    <span class="btn" disabled>تکمیل ظرفیت</span>
+                    <span class="btn" disabled>disabled</span>
+                </div>
+            </a>
+
+            <a href="#" class="exam__item ielts filled disabled" onclick="return false">
+                <div class="status-indicator status-filled">تکمیل ظرفیت</div>
+                <div class="exam__header">
+                    <div class="exam__title">
+                        <h5>اصفهان (ایده نواندیش)</h5>
+                    </div>
+                </div>
+                <div class="exam__date">
+                    <time>
+                        <span>2025-11-03</span>
+                        <span class="farsi_date">۱۴۰۴/۰۸/۱۲</span>
+                    </time>
+                </div>
+                <div class="exam__time">
+                    <em>صبح (۰۹:۰۰ - ۱۲:۰۰)</em>
+                </div>
+                <div class="exam__details">
+                    <span class="exam__type">cdielts - (Ac/Gt)</span>
+                </div>
+                <div class="exam__price">
+                    ۲۹۱,۱۱۵,۰۰۰ ریال
+                </div>
+                <div class="exam__buttons">
+                    <span class="btn" disabled>تکمیل ظرفیت</span>
+                    <span class="btn" disabled>disabled</span>
+                </div>
+            </a>
+
+            <!-- Additional sample appointments -->
+            <a href="#" class="exam__item ielts available" onclick="return false">
+                <div class="status-indicator status-available">قابل ثبت نام</div>
+                <div class="exam__header">
+                    <div class="exam__title">
+                        <h5>شیراز (مرکز آموزشی)</h5>
+                    </div>
+                </div>
+                <div class="exam__date">
+                    <time>
+                        <span>2025-12-01</span>
+                        <span class="farsi_date">۱۴۰۴/۰۹/۱۰</span>
+                    </time>
+                </div>
+                <div class="exam__time">
+                    <em>صبح (۰۹:۰۰ - ۱۲:۰۰)</em>
+                </div>
+                <div class="exam__details">
+                    <span class="exam__type">cdielts - (Ac/Gt)</span>
+                </div>
+                <div class="exam__price">
+                    ۲۹۱,۱۱۵,۰۰۰ ریال
+                </div>
+                <div class="exam__buttons">
+                    <span class="btn btn-primary">قابل ثبت نام</span>
+                    <span class="btn btn-primary">active-button</span>
+                </div>
+            </a>
+
+            <a href="#" class="exam__item ielts filled disabled" onclick="return false">
+                <div class="status-indicator status-filled">تکمیل ظرفیت</div>
+                <div class="exam__header">
+                    <div class="exam__title">
+                        <h5>مشهد (دانشگاه فردوسی)</h5>
+                    </div>
+                </div>
+                <div class="exam__date">
+                    <time>
+                        <span>2025-11-25</span>
+                        <span class="farsi_date">۱۴۰۴/۰۹/۰۴</span>
+                    </time>
+                </div>
+                <div class="exam__time">
+                    <em>ظهر (۱۳:۳۰ - ۱۶:۳۰)</em>
+                </div>
+                <div class="exam__details">
+                    <span class="exam__type">cdielts - (Ac/Gt)</span>
+                </div>
+                <div class="exam__price">
+                    ۲۹۱,۱۱۵,۰۰۰ ریال
+                </div>
+                <div class="exam__buttons">
+                    <span class="btn" disabled>تکمیل ظرفیت</span>
+                    <span class="btn" disabled>disabled</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Add filtering functionality
+        document.getElementById('city-filter').addEventListener('change', filterAppointments);
+        document.getElementById('status-filter').addEventListener('change', filterAppointments);
+        document.getElementById('month-filter').addEventListener('change', filterAppointments);
+
+        function filterAppointments() {
+            const cityFilter = document.getElementById('city-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const monthFilter = document.getElementById('month-filter').value;
+
+            const appointments = document.querySelectorAll('.exam__item');
+
+            appointments.forEach(apt => {
+                const city = apt.querySelector('h5').textContent;
+                const status = apt.classList.contains('available') ? 'available' : 'filled';
+                const dateStr = apt.querySelector('time span').textContent;
+                const month = dateStr.substring(0, 7); // YYYY-MM format
+
+                let show = true;
+
+                if (cityFilter && !city.includes(cityFilter)) {
+                    show = false;
+                }
+
+                if (statusFilter && status !== statusFilter) {
+                    show = false;
+                }
+
+                if (monthFilter && month !== monthFilter) {
+                    show = false;
+                }
+
+                apt.style.display = show ? 'block' : 'none';
+            });
+        }
+
+        // Add click handlers for demonstration
+        document.querySelectorAll('.exam__item.available').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const location = this.querySelector('h5').textContent;
+                const date = this.querySelector('time span').textContent;
+                alert(`ثبت نام برای آزمون ${location} در تاریخ ${date}`);
+            });
+        });
+    </script>
+</body>
+</html>

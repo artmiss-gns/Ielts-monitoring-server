@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Time Table - Simulation Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Arial', 'Helvetica', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            direction: rtl;
+            text-align: right;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            border-right: 4px solid #007bff;
+        }
+
+        .controls h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .control-btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .control-btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,123,255,0.3);
+        }
+
+        .control-btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .control-btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(40,167,69,0.3);
+        }
+
+        .control-btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .control-btn-danger:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(220,53,69,0.3);
+        }
+
+        .filters {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            border-right: 4px solid #28a745;
+        }
+
+        .filters h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.95em;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .exams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .exam__item {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            position: relative;
+            display: block;
+            border-top: 4px solid transparent;
+        }
+
+        .exam__item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .exam__item.available {
+            border-top-color: #28a745;
+        }
+
+        .exam__item.filled {
+            border-top-color: #dc3545;
+        }
+
+        .exam__item.disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-available {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-filled {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .exam__title h5 {
+            font-size: 1.25em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .exam__date {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .exam__date time {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .exam__time {
+            color: #6c757d;
+            font-size: 1em;
+            margin-bottom: 15px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .exam__details {
+            margin-bottom: 15px;
+        }
+
+        .exam__type {
+            background-color: #007bff;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .exam__price {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .exam__buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 1.2em;
+            color: #6c757d;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #f5c6cb;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .control-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-btn {
+                width: 100%;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .exams-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .exam__item {
+                padding: 20px;
+            }
+
+            .exam__buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 20px 0;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .controls, .filters {
+                padding: 20px;
+            }
+
+            .exam__item {
+                padding: 15px;
+            }
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>IELTS Time Table</h1>
+            <p>Simulation Server - آزمون آیلتس</p>
+        </div>
+
+        <div class="controls">
+            <h3>🎛️ Server Controls</h3>
+            <div class="control-buttons">
+                <button class="control-btn control-btn-primary" onclick="loadAppointments()">🔄 Refresh</button>
+                <button class="control-btn control-btn-success" onclick="resetTestData()">📝 Reset Test Data</button>
+                <button class="control-btn control-btn-danger" onclick="clearAllAppointments()">🗑️ Clear All</button>
+                <button class="control-btn control-btn-primary" onclick="addRandomAppointment()">➕ Add Random</button>
+            </div>
+        </div>
+
+        <div class="filters">
+            <h3>🔍 Filter Options</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="city-filter">🏙️ شهر</label>
+                    <select id="city-filter">
+                        <option value="">همه شهرها</option>
+                        <option value="Tehran">تهران</option>
+                        <option value="Isfahan">اصفهان</option>
+                        <option value="Shiraz">شیراز</option>
+                        <option value="Mashhad">مشهد</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter">📊 وضعیت</label>
+                    <select id="status-filter">
+                        <option value="">همه</option>
+                        <option value="available">قابل ثبت نام</option>
+                        <option value="filled">تکمیل ظرفیت</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="month-filter">📅 ماه</label>
+                    <input type="month" id="month-filter">
+                </div>
+            </div>
+        </div>
+
+        <div id="exams-container" class="exams-grid">
+            <div class="loading">Loading appointments...</div>
+        </div>
+    </div>
+
+    <script>
+        let allAppointments = [];
+
+        // Load appointments from API
+        async function loadAppointments() {
+            try {
+                const response = await fetch('/api/appointments');
+                if (!response.ok) throw new Error('Failed to fetch appointments');
+                allAppointments = await response.json();
+                renderAppointments();
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                document.getElementById('exams-container').innerHTML =
+                    '<div class="error">❌ Error loading appointments. Please try again.</div>';
+            }
+        }
+
+        // Render appointments with filtering
+        function renderAppointments() {
+            const container = document.getElementById('exams-container');
+            const cityFilter = document.getElementById('city-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const monthFilter = document.getElementById('month-filter').value;
+
+            const filteredAppointments = allAppointments.filter(apt => {
+                if (cityFilter && apt.city !== cityFilter) return false;
+                if (statusFilter && apt.status !== statusFilter) return false;
+                if (monthFilter) {
+                    const aptMonth = apt.date.substring(0, 7); // YYYY-MM format
+                    if (aptMonth !== monthFilter) return false;
+                }
+                return true;
+            });
+
+            if (filteredAppointments.length === 0) {
+                container.innerHTML = '<div class="loading">📭 No appointments found matching the filters.</div>';
+                return;
+            }
+
+            container.innerHTML = filteredAppointments.map(apt => {
+                const statusClass = apt.status === 'available' ? 'available' : 'filled';
+                const disabledClass = apt.status === 'filled' ? 'disabled' : '';
+                const statusText = apt.status === 'available' ? '✅ قابل ثبت نام' : '❌ تکمیل ظرفیت';
+
+                return `
+                    <div class="exam__item ${statusClass} ${disabledClass}">
+                        <div class="status-indicator status-${apt.status}">${statusText}</div>
+                        <div class="exam__title">
+                            <h5>📍 ${apt.location}</h5>
+                        </div>
+                        <div class="exam__date">
+                            <time>
+                                <span>📅 ${apt.date}</span>
+                                <span class="farsi_date">🗓️ ${apt.persianDate}</span>
+                            </time>
+                        </div>
+                        <div class="exam__time">
+                            🕐 ${apt.time}
+                        </div>
+                        <div class="exam__details">
+                            <span class="exam__type">📝 ${apt.examType}</span>
+                        </div>
+                        <div class="exam__price">
+                            💰 ${apt.price}
+                        </div>
+                        <div class="exam__buttons">
+                            ${apt.availableIndicators.map(indicator =>
+                                `<button class="btn btn-primary">${indicator}</button>`
+                            ).join('')}
+                            ${apt.filledIndicators.map(indicator =>
+                                `<button class="btn" disabled>${indicator}</button>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Register for appointment
+        async function registerAppointment(event, appointmentId) {
+            event.preventDefault();
+            try {
+                // In a real scenario, this would redirect to registration page
+                alert(`✅ ثبت نام برای آزمون ${appointmentId}`);
+                // You could make an API call here to mark as registered
+            } catch (error) {
+                console.error('Error registering:', error);
+            }
+        }
+
+        // Reset test data
+        async function resetTestData() {
+            try {
+                const response = await fetch('/api/reset-test-data', { method: 'POST' });
+                if (!response.ok) throw new Error('Failed to reset data');
+                await loadAppointments();
+                alert('✅ Test data reset successfully!');
+            } catch (error) {
+                console.error('Error resetting data:', error);
+                alert('❌ Error resetting test data');
+            }
+        }
+
+        // Clear all appointments
+        async function clearAllAppointments() {
+            if (!confirm('⚠️ Are you sure you want to clear all appointments?')) return;
+
+            try {
+                const response = await fetch('/api/appointments', { method: 'DELETE' });
+                if (!response.ok) throw new Error('Failed to clear appointments');
+                await loadAppointments();
+                alert('✅ All appointments cleared!');
+            } catch (error) {
+                console.error('Error clearing appointments:', error);
+                alert('❌ Error clearing appointments');
+            }
+        }
+
+        // Add random appointment
+        async function addRandomAppointment() {
+            const cities = ['Tehran', 'Isfahan', 'Shiraz', 'Mashhad'];
+            const times = ['صبح (۰۹:۰۰ - ۱۲:۰۰)', 'ظهر (۱۳:۳۰ - ۱۶:۳۰)'];
+            const randomAppointment = {
+                date: `2025-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+                time: times[Math.floor(Math.random() * times.length)],
+                location: `مرکز آزمون ${cities[Math.floor(Math.random() * cities.length)]}`,
+                city: cities[Math.floor(Math.random() * cities.length)],
+                examType: 'cdielts - (Ac/Gt)',
+                price: '۲۹۱,۱۱۵,۰۰۰ ریال',
+                persianDate: '۱۴۰۴/۰۸/۰۱',
+                status: Math.random() > 0.5 ? 'available' : 'filled',
+                availableIndicators: Math.random() > 0.5 ? ['قابل ثبت نام', 'active-button'] : [],
+                filledIndicators: Math.random() > 0.5 ? ['تکمیل ظرفیت', 'disabled'] : []
+            };
+
+            try {
+                const response = await fetch('/api/appointments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(randomAppointment)
+                });
+                if (!response.ok) throw new Error('Failed to add appointment');
+                await loadAppointments();
+                alert('✅ Random appointment added!');
+            } catch (error) {
+                console.error('Error adding appointment:', error);
+                alert('❌ Error adding appointment');
+            }
+        }
+
+        // Event listeners for filters
+        document.getElementById('city-filter').addEventListener('change', renderAppointments);
+        document.getElementById('status-filter').addEventListener('change', renderAppointments);
+        document.getElementById('month-filter').addEventListener('change', renderAppointments);
+
+        // Load appointments on page load
+        loadAppointments();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadAppointments, 30000);
+    </script>
+</body>
+</html>

@@ -113,6 +113,7 @@ dmypy.json
 test.ipynb
 uv.lock
 notification_state.json
+logs/
 
-
+# Moved to organized directories
 sample-html-page2.html
