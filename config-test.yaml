@@ -1,5 +1,5 @@
 # Test configuration for simulation server with notifications
-base_url: 'http://localhost:8000'
+base_url: 'http://host.docker.internal:8000'
 cities:
   - isfahan
 exam_models:
