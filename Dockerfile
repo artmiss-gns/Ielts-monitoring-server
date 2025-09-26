@@ -86,4 +86,4 @@ EXPOSE 8080
 
 # Set entrypoint and default command
 ENTRYPOINT ["python", "-m", "src.ielts_monitor"]
-CMD ["--verbose"]
+CMD ["--verbose", "--show-unavailable"]
