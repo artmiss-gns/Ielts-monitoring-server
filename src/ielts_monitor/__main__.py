@@ -5,6 +5,7 @@ import logging
 import sys
 import time
 import asyncio
+from pathlib import Path
 from typing import List, Optional
 
 try:
@@ -14,7 +15,8 @@ except ImportError:
     # python-dotenv not installed, will use system environment variables
     pass
 
-from src.ielts_monitor.config import Config, default_config
+from src.ielts_monitor.config import Config
+from src.ielts_monitor.config.settings import load_config_from_yaml
 from src.ielts_monitor.scraper import IELTSClient
 from src.ielts_monitor.parser import AvailabilityParser
 from src.ielts_monitor.notification import NotificationService
@@ -231,7 +233,11 @@ async def run_monitor(config: Config, run_once: bool = False) -> None:
 def main() -> None:
     """Main entry point."""
     args = parse_args()
-    config = update_config_from_args(default_config, args)
+    
+    # Load configuration from the correct path
+    config_path = "/app/config/config.yaml" if Path("/app/config/config.yaml").exists() else "config.yaml"
+    config = load_config_from_yaml(config_path)
+    config = update_config_from_args(config, args)
     
     # Handle clear notifications command
     if args.clear_notifications:
