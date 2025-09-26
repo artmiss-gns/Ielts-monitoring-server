@@ -15,8 +15,9 @@ exam_models:
 # Months to check (1-12, e.g., 10 for October, 11 for November)
 months:
   - 10
-  # - 11
-  # - 8
+  - 11
+  - 12
+  - 1
 
 # Monitoring frequency in seconds (300 = 5 minutes, recommended for production)
 check_frequency: 60
