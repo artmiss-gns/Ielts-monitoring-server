@@ -1,19 +1,20 @@
 # IELTS Monitoring
 
-A lightweight application that monitors the Irsafam website (https://irsafam.org/ielts/timetable) for available IELTS exam slots. This tool provides a simple and efficient way to track IELTS appointment availability across different cities and exam types.
+A professional, production-ready application that monitors the Irsafam website (https://irsafam.org/ielts/timetable) for available IELTS exam slots. This tool provides real-time monitoring with instant Telegram notifications when new appointments become available.
 
-## Features
+## ✨ Features
 
-- **Command-based Interface**: Two main commands - `monitor` for continuous tracking and `scan` for one-time checks
-- **Configuration System**: Uses YAML configuration file for easy setup (reads from config.yaml by default)
-- **Month Number Support**: Simplified month selection using numbers (1-12) instead of YYYY-MM format
-- **Enhanced Readability**: Persian text cleaning for clearer output and emoji indicators
-- **URL Transparency**: Shows URLs being accessed for monitoring
-- **Resource-efficient Implementation**: No headless browsers required
-- **Responsible Scraping**: Configurable delays to respect website limits
-- **Containerized**: For easy deployment (Dockerfile included)
-- **Telegram Notifications**: Get instant notifications when new slots become available
-- **Smart Tracking**: Avoids duplicate notifications and handles slot availability changes
+- **🚀 Production-Ready Monitoring**: Continuous real-time tracking with professional logging
+- **📱 Instant Telegram Notifications**: Get immediate alerts when new slots become available
+- **🎨 Enhanced Terminal UI**: Beautiful, colorful logging with emojis and professional formatting
+- **🧠 Smart State Management**: Prevents duplicate notifications and handles slot re-availability
+- **⚡ No Rate Limiting**: Optimized for IELTS monitoring - get notified about every available slot
+- **🔄 HTTP Fallback**: Reliable notification delivery even when libraries have compatibility issues
+- **📊 Real-time Status Updates**: Clear indicators for scanning, new slots, and notification delivery
+- **🛡️ Robust Error Handling**: Graceful handling of network issues and API limits
+- **⚙️ Flexible Configuration**: YAML configuration with command-line overrides
+- **🐳 Containerized**: Docker support for easy deployment
+- **📝 Comprehensive Logging**: File and console logging with different verbosity levels
 
 ## Installation
 
@@ -25,20 +26,14 @@ A lightweight application that monitors the Irsafam website (https://irsafam.org
    cd ielts-monitoring2
    ```
 
-2. Install the required dependencies:
+2. Install the required dependencies using [uv](https://github.com/astral-sh/uv) (recommended):
+   ```bash
+   uv sync
+   ```
+
+   Or using pip:
    ```bash
    pip install -r requirements.txt
-   ```
-
-   For notifications (optional):
-   ```bash
-   pip install python-telegram-bot
-   ```
-
-   Alternatively, we recommend using [uv](https://github.com/astral-sh/uv) for faster installation:
-   ```bash
-   uv pip install -r requirements.txt
-   uv pip install python-telegram-bot
    ```
 
 ### Using Docker
@@ -120,85 +115,87 @@ To receive notifications when new IELTS slots become available:
 
 ## Usage
 
-The application provides two main commands: `monitor` for continuous monitoring and `scan` for a one-time check.
+The application provides a modern command-line interface with comprehensive monitoring capabilities.
 
 ### Command Structure
 
-```
-usage: python run.py {monitor,scan} [options]
+```bash
+# Using uv (recommended)
+uv run python -m src.ielts_monitor [options]
 
-# For help with a specific command
-python run.py monitor --help
-python run.py scan --help
+# Using python directly
+python -m src.ielts_monitor [options]
+
+# For help
+uv run python -m src.ielts_monitor --help
 ```
 
 ### Examples
 
-#### Using the `monitor` Command (Continuous Monitoring)
+#### Continuous Monitoring (Default)
 
 Start continuous monitoring with settings from config.yaml:
 ```bash
-python run.py monitor
+uv run python -m src.ielts_monitor
 ```
 
-Run with a custom check frequency (in seconds):
+Monitor with custom check frequency (30 seconds):
 ```bash
-python run.py monitor --check-frequency 1800
+uv run python -m src.ielts_monitor --check-frequency 30
 ```
 
-Monitor specific cities and exam models (overrides config):
+Monitor specific cities and exam models:
 ```bash
-python run.py monitor --cities tehran isfahan --exam-models cdielts
+uv run python -m src.ielts_monitor --cities tehran isfahan --exam-models cdielts
 ```
 
 Show unavailable slots in the output:
 ```bash
-python run.py monitor --show-unavailable
+uv run python -m src.ielts_monitor --show-unavailable
+```
+
+#### One-time Check
+
+Run a single scan and exit:
+```bash
+uv run python -m src.ielts_monitor --once
+```
+
+Single scan with verbose logging:
+```bash
+uv run python -m src.ielts_monitor --once --verbose
+```
+
+#### Notification Management
+
+Clear notification state (allows re-notification of all slots):
+```bash
+uv run python -m src.ielts_monitor --clear-notifications
 ```
 
 Disable notifications:
 ```bash
-python run.py monitor --no-notifications
-```
-
-Disable SSL certificate verification (useful if encountering SSL issues):
-```bash
-python run.py monitor --no-ssl-verify
-```
-
-#### Using the `scan` Command (One-time Check)
-
-Run a one-time scan with settings from config.yaml:
-```bash
-python run.py scan
-```
-
-Scan specific cities, exam models, and months (overrides config):
-```bash
-python run.py scan --cities tehran --exam-models cdielts --months 10 11 12
-```
-
-Use sample data for testing (no actual website requests):
-```bash
-python run.py scan --use-sample
-```
-
-Show all slots including unavailable ones:
-```bash
-python run.py scan --use-sample --show-unavailable
+uv run python -m src.ielts_monitor --no-notifications
 ```
 
 ### Command Line Options
 
-Both commands support these options (check `--help` for full details):
-- `--cities`: Cities to check (e.g., tehran isfahan)
-- `--exam-models`: Exam models to check (e.g., cdielts pdielts)
-- `--months`: Months to check (1-12, e.g., 10 11)
-- `--check-frequency`: Check frequency in seconds (monitor command only)
-- `--show-unavailable`: Show unavailable/filled slots
-- `--no-ssl-verify`: Disable SSL certificate verification
-- `--use-sample`: Use sample data (scan command only)
-- `--no-notifications`: Disable notifications (monitor command only)
+All available options (use `--help` for full details):
+
+**Monitoring Options:**
+- `--cities`: Cities to check (e.g., `tehran isfahan`)
+- `--exam-models`: Exam models to check (e.g., `cdielts pdielts`)
+- `--months`: Months to check (1-12, e.g., `10 11`)
+- `--check-frequency`: Check frequency in seconds (default: 3600)
+- `--once`: Run a single check and exit
+- `--verbose`: Enable verbose logging
+
+**Display Options:**
+- `--show-unavailable`: Show unavailable/filled slots in output
+
+**Notification Options:**
+- `--no-notifications`: Disable Telegram notifications
+- `--clear-notifications`: Clear notification state (allows re-notification)
 
 ### Using Docker
 
@@ -212,37 +209,47 @@ Run with custom options:
 docker run ielts-monitor scan --cities tehran --exam-models cdielts --months 10 11 --show-unavailable
 ```
 
-## Output Format
+## 🖥️ Enhanced Terminal Output
 
-The application displays appointment slots in a clear, organized format. Key features of the output:
+The application features a professional, colorful terminal interface with real-time status updates:
 
-- Shows the URL being monitored at the start of the process
-- Groups slots by date for easy viewing
-- Available slots are marked with [✅ Available]
-- Unavailable slots are marked with [❌ Unavailable] (when using `--show-unavailable`)
-- Persian text in time of day and location is automatically cleaned and simplified
-- Shows check frequency and next check time in a user-friendly format
+### Key Features:
+- **🎨 Beautiful Visual Design**: Professional formatting with emojis and colors
+- **📊 Real-time Status**: Live updates on scanning, new slots, and notifications
+- **⏰ Timestamps**: Precise timing for all activities
+- **🔄 Activity Indicators**: Clear status for SCANNING, NOTIFICATIONS, WAITING
+- **📋 Detailed Slot Information**: Complete appointment details with Persian support
 
-Example output:
+### Example Output:
 ```
-Monitoring URL: https://irsafam.org/ielts/timetable?city%5B%5D=isfahan&model%5B%5D=cdielts&month%5B%5D=2025-10
-Checking again in 10 seconds...
+🚀 Starting IELTS appointment monitoring
+🏙️  Monitoring cities: isfahan
+📚 Monitoring exam models: cdielts
+📅 Monitoring months: 10
+🔔 Notifications enabled: ✅
+⏱️  Check frequency: 3600 seconds
 
-No available slots found.
+🔄 [15:27:15] SCANNING - Checking IELTS appointment availability...
 
---------------------------------------------------
-Found 56 unavailable/filled slots:
---------------------------------------------------
+============================================================
+🎉 SLOTS FOUND: 2 available appointments
+✨ 2 slots ready for immediate booking!
+📋 UNAVAILABLE: 1 filled appointment
+============================================================
 
-Date: 11 Oct 2025
-  ├── Afternoon (13:30 - 16:30) - Isfahan (Ideh Nowandish) (cdielts - (Ac/Gt)) [❌ Unavailable]
-  └── Price: 291,115,000 Rial
-  ├── Morning (08:30 - 11:30) - Isfahan (Ideh Nowandish) (cdielts - (Ac/Gt)) [❌ Unavailable]
-  └── Price: 291,115,000 Rial
+🆕 NEW SLOT ALERT: 1 new appointment just became available!
 
-Date: 18 Oct 2025
-  ├── Afternoon (13:30 - 16:30) - Tehran (Pars) (cdielts - (Ac/Gt)) [✅ Available]
-  └── Price: 291,115,000 Rial
+🎯 Slot 1 Found:
+   📅 Date: 2025-10-29 (۱۴۰۴/۰۹/۰۴)
+   🕐 Time: صبح (۰۸:۳۰ - ۱۱:۳۰)
+   📍 Location: اصفهان (ایده نواندیش)
+   📝 Exam Type: cdielts - (Ac/Gt)
+   💰 Price: ۲۹۱,۱۱۵,۰۰۰ ریال
+
+🔄 [15:27:20] NOTIFICATIONS - Processing alerts for 2 available slots...
+📤 NOTIFICATION SENT: Alert delivered for 2025-10-20 at اصفهان (ایده نواندیش)
+
+🔄 [15:27:25] WAITING - Next scan in 3600 seconds
 ```
 
 ## Development
