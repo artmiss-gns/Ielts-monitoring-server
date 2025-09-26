@@ -1,0 +1,67 @@
+# Docker Compose for Local Development
+# For production deployment on Koyeb, use the Dockerfile directly
+
+services:
+  # Main IELTS monitoring service (development mode)
+  ielts-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: ielts-monitor-app
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Tehran
+      - PYTHONPATH=/app
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Data persistence for notification state
+      - ielts_data:/app/data
+      # Logs for monitoring
+      - ./logs:/app/logs
+      # Configuration (read-only)
+      - ./config.yaml:/app/config/config.yaml:ro
+      # Source code for live development
+      - ./src:/app/src:ro
+    networks:
+      - ielts-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Development settings - faster checks
+    command: ["--verbose", "--check-frequency", "60"]
+
+  # Simulation server for testing
+  ielts-simulation:
+    build:
+      context: ./simulation-server
+      dockerfile: Dockerfile
+    container_name: ielts-simulation-server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./simulation-server/data:/app/data:ro
+      - ./simulation-server/static:/app/static:ro
+    networks:
+      - ielts-network
+    profiles:
+      - simulation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ielts-network:
+    driver: bridge
+    name: ielts-monitoring-network
+
+volumes:
+  ielts_data:
+    driver: local
+    name: ielts-monitor-data
