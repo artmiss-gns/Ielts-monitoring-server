@@ -1,0 +1,25 @@
+# Configuration for IELTS appointment monitoring - SIMULATION MODE
+
+# Base URL for the simulation server
+base_url: 'http://localhost:8000'
+
+cities:
+  - isfahan
+
+# Exam models to check (cdielts, pdielts)
+exam_models:
+  - cdielts
+
+# Months to check (10 = October, 11 = November)
+months:
+  - 10
+  - 11
+
+# Monitoring frequency in seconds (60 = 1 minute for testing)
+check_frequency: 60
+
+# Show unavailable/filled slots in output
+show_unavailable: true
+
+# Disable SSL certificate verification (use with caution)
+no_ssl_verify: false
