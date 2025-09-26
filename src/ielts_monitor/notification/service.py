@@ -27,6 +27,7 @@ except ImportError:
 
 from src.ielts_monitor.config import Config
 from src.ielts_monitor.parser import ExamSlot
+from .http_sender import HTTPTelegramSender
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ class NotificationManager:
 
         # Initialize Telegram bot if credentials are available
         self.bot = None
+        self.http_sender = HTTPTelegramSender()
         self._init_telegram_bot()
 
     def _init_telegram_bot(self):
@@ -101,11 +103,56 @@ class NotificationManager:
             return
 
         try:
-            self.bot = Bot(token=bot_token)
+            # Try to initialize bot with different configurations to handle version issues
+            try:
+                # First try with default settings
+                self.bot = Bot(token=bot_token)
+            except Exception as init_error:
+                if "proxy" in str(init_error).lower() or "AsyncClient" in str(init_error):
+                    logger.debug("Telegram library compatibility issue, trying alternative method")
+                    # Try creating bot with custom request configuration
+                    try:
+                        # Import the specific classes we need
+                        from telegram.request import HTTPXRequest
+                        import httpx
+                        
+                        # Create a custom HTTPXRequest without proxy settings
+                        request = HTTPXRequest(
+                            connection_pool_size=1,
+                            read_timeout=30,
+                            write_timeout=30,
+                            connect_timeout=30,
+                            pool_timeout=30
+                        )
+                        self.bot = Bot(token=bot_token, request=request)
+                        logger.info("Bot initialized with custom HTTP request handler")
+                    except Exception as custom_error:
+                        logger.debug(f"Custom request handler failed: {custom_error}")
+                        # Final fallback: try the simplest possible initialization
+                        try:
+                            # Use the most basic Bot initialization possible
+                            from telegram import Bot as TelegramBot
+                            self.bot = TelegramBot(token=bot_token)
+                            logger.info("Bot initialized with basic configuration")
+                        except Exception as basic_error:
+                            logger.info("📡 Using HTTP fallback for reliable Telegram delivery")
+                            logger.debug(f"All Telegram library methods failed: {basic_error}")
+                            # Use HTTP fallback instead of failing
+                            self.bot = None
+                            self.http_sender = HTTPTelegramSender(bot_token, chat_id)
+                else:
+                    raise init_error
+            
             self.chat_id = chat_id
             logger.info("Telegram bot initialized successfully")
+            
         except Exception as e:
             logger.error(f"Failed to initialize Telegram bot: {e}")
+            logger.error("This might be due to version compatibility issues.")
+            logger.info("Try updating dependencies with:")
+            logger.info("  pip install --upgrade python-telegram-bot httpx")
+            logger.info("Or install compatible versions with:")
+            logger.info("  pip install 'python-telegram-bot>=20.0.0,<21.0.0' 'httpx>=0.24.0,<0.28.0'")
             self.bot = None
 
     def _load_state(self) -> NotificationState:
@@ -146,54 +193,20 @@ class NotificationManager:
         """Check if we're within rate limits.
 
         Returns:
-            True if within limits, False if rate limited
+            Always True (rate limiting disabled for IELTS monitoring)
         """
-        if not self.state.last_notification_time:
-            return True
-
-        try:
-            last_notification = datetime.fromisoformat(self.state.last_notification_time)
-            time_since_last = datetime.now(timezone.utc) - last_notification
-
-            # Check minimum interval between notifications
-            min_interval = timedelta(seconds=self.config.monitoring.notification.rate_limit_seconds)
-            if time_since_last < min_interval:
-                self.state.rate_limit_violations += 1
-                self._save_state()
-                return False
-
-            return True
-        except (ValueError, TypeError):
-            # If we can't parse the timestamp, allow the notification
-            return True
+        # Rate limiting disabled - IELTS slots can appear in batches
+        # and users want to be notified about all available slots immediately
+        return True
 
     def _check_hourly_limit(self) -> bool:
         """Check if we're within hourly notification limits.
 
         Returns:
-            True if within limits, False if exceeded
+            Always True (hourly limit disabled for IELTS monitoring)
         """
-        max_per_hour = self.config.monitoring.notification.max_notifications_per_hour
-
-        # Count notifications in the last hour
-        if self.state.last_notification_time:
-            try:
-                last_notification = datetime.fromisoformat(self.state.last_notification_time)
-                one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
-
-                # If last notification was more than an hour ago, reset counter
-                if last_notification < one_hour_ago:
-                    self.state.notification_count = 0
-                    self._save_state()
-                    return True
-            except (ValueError, TypeError):
-                pass
-
-        # Check if we've exceeded the hourly limit
-        if self.state.notification_count >= max_per_hour:
-            logger.warning(f"Hourly notification limit reached: {max_per_hour}")
-            return False
-
+        # Hourly limit disabled - IELTS slots are rare and valuable
+        # Users want to be notified about every available slot
         return True
 
     def _format_slot_message(self, slot: ExamSlot) -> str:
@@ -216,6 +229,48 @@ class NotificationManager:
             f"_Don't miss this opportunity!_"
         )
 
+    async def _send_http_notification(self, slot: ExamSlot) -> bool:
+        """Send notification using HTTP fallback method.
+        
+        Args:
+            slot: ExamSlot to notify about
+            
+        Returns:
+            True if notification was sent successfully, False otherwise
+        """
+        # Check rate limits
+        if not self._check_rate_limit():
+            logger.warning("Rate limit exceeded, skipping HTTP notification")
+            return False
+
+        if not self._check_hourly_limit():
+            logger.warning("Hourly limit exceeded, skipping HTTP notification")
+            return False
+
+        try:
+            slot_hash = self._generate_slot_hash(slot)
+            message = self._format_slot_message(slot)
+
+            success = await self.http_sender.send_message(message)
+            
+            if success:
+                # Update state
+                self.state.notified_slots.add(slot_hash)
+                self.state.notification_count += 1
+                self.state.last_notification_time = datetime.now(timezone.utc).isoformat()
+                self.state.last_check = datetime.now(timezone.utc).isoformat()
+                self._save_state()
+
+                logger.info(f"HTTP notification sent for slot: {slot.date} at {slot.location}")
+                return True
+            else:
+                logger.error(f"Failed to send HTTP notification for: {slot.date} at {slot.location}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Unexpected error sending HTTP notification: {e}")
+            return False
+
     async def send_notification(self, slot: ExamSlot) -> bool:
         """Send notification for a slot with rate limiting and error handling.
 
@@ -225,6 +280,11 @@ class NotificationManager:
         Returns:
             True if notification was sent successfully, False otherwise
         """
+        # Try HTTP sender first if bot is not available
+        if not self.bot and self.http_sender.is_configured():
+            logger.info("Using HTTP fallback for notification")
+            return await self._send_http_notification(slot)
+        
         if not self.bot:
             logger.warning("Telegram bot not initialized, skipping notification")
             return False
