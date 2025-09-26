@@ -1,7 +1,9 @@
 """Configuration settings for the IELTS appointment monitoring application."""
 
+import yaml
+from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 class ScraperConfig(BaseModel):
@@ -77,5 +79,56 @@ class Config(BaseModel):
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
 
 
-# Default configuration
-default_config = Config()
+def load_config_from_yaml(config_path: str = "config.yaml") -> Config:
+    """Load configuration from YAML file.
+    
+    Args:
+        config_path: Path to the YAML configuration file
+        
+    Returns:
+        Config object with values from YAML file
+    """
+    config_file = Path(config_path)
+    
+    # Start with default config
+    config = Config()
+    
+    if config_file.exists():
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                yaml_data = yaml.safe_load(f)
+            
+            if yaml_data:
+                # Update scraper config
+                if 'base_url' in yaml_data:
+                    config.scraper.base_url = yaml_data['base_url']
+                
+                # Update monitoring config
+                if 'cities' in yaml_data:
+                    config.monitoring.cities = yaml_data['cities']
+                
+                if 'exam_models' in yaml_data:
+                    config.monitoring.exam_models = yaml_data['exam_models']
+                
+                if 'months' in yaml_data:
+                    # Convert to strings if they're integers
+                    config.monitoring.months = [str(m) for m in yaml_data['months']]
+                
+                if 'check_frequency' in yaml_data:
+                    config.monitoring.check_frequency = yaml_data['check_frequency']
+                
+                if 'show_unavailable' in yaml_data:
+                    config.monitoring.show_unavailable = yaml_data['show_unavailable']
+                
+                if 'no_ssl_verify' in yaml_data:
+                    config.scraper.request_timeout = 60 if yaml_data['no_ssl_verify'] else 30
+                    
+        except Exception as e:
+            print(f"Warning: Failed to load config from {config_path}: {e}")
+            print("Using default configuration")
+    
+    return config
+
+
+# Default configuration (loads from config.yaml if available)
+default_config = load_config_from_yaml()

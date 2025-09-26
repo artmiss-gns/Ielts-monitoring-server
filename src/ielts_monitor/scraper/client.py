@@ -30,6 +30,22 @@ class IELTSClient:
             "Accept-Language": "en-US,en;q=0.5",
             "Connection": "keep-alive",
         })
+    
+    def get_urls(self) -> List[str]:
+        """Get all URLs that will be monitored.
+        
+        Returns:
+            List of URLs to be monitored
+        """
+        urls = []
+        for month in self.config.monitoring.months:
+            url = self._construct_url(
+                self.config.monitoring.cities,
+                self.config.monitoring.exam_models,
+                [month]
+            )
+            urls.append(url)
+        return urls
         
     def _construct_url(self, cities: List[str], exam_models: List[str], months: Optional[List[str]] = None) -> str:
         """Construct the URL for the IELTS appointment page.

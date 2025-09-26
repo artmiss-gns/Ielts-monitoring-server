@@ -39,6 +39,17 @@ class AvailabilityParser:
         Returns:
             English date string
         """
+        # Try the simulation server format first: time > span (first span is the date)
+        time_elem = exam_item.select_one("time")
+        if time_elem:
+            spans = time_elem.select("span")
+            if spans and len(spans) >= 1:
+                # First span contains the date like "2025-11-10"
+                date_text = spans[0].text.strip()
+                if date_text and date_text != "":
+                    return date_text
+        
+        # Fallback to original format: time date span
         date_spans = exam_item.select("time date span")
         if len(date_spans) >= 2:
             day_month = date_spans[0].text.strip()
@@ -67,6 +78,14 @@ class AvailabilityParser:
         Returns:
             Time of day string
         """
+        # Try simulation server format: .exam__time
+        time_elem = exam_item.select_one(".exam__time")
+        if time_elem:
+            time_text = time_elem.text.strip()
+            if time_text and time_text != "":
+                return time_text
+        
+        # Fallback to original format
         time_elem = exam_item.select_one("div[both] em")
         return time_elem.text.strip() if time_elem else "Unknown time"
     
@@ -79,6 +98,14 @@ class AvailabilityParser:
         Returns:
             Location string
         """
+        # Try simulation server format: .exam__title h5
+        location = exam_item.select_one(".exam__title h5")
+        if location:
+            location_text = location.text.strip()
+            if location_text and location_text != "":
+                return location_text
+        
+        # Fallback to original format
         location = exam_item.select_one("h5")
         return location.text.strip() if location else "Unknown location"
     
@@ -91,6 +118,14 @@ class AvailabilityParser:
         Returns:
             Exam type string
         """
+        # Try simulation server format: .exam__type
+        exam_type = exam_item.select_one(".exam__type")
+        if exam_type:
+            type_text = exam_type.text.strip()
+            if type_text and type_text != "":
+                return type_text
+        
+        # Fallback to original format
         exam_type = exam_item.select_one(".exam_type")
         return exam_type.text.strip() if exam_type else "Unknown type"
     
@@ -103,6 +138,14 @@ class AvailabilityParser:
         Returns:
             Price string
         """
+        # Try simulation server format: .exam__price
+        price = exam_item.select_one(".exam__price")
+        if price:
+            price_text = price.text.strip()
+            if price_text and price_text != "":
+                return price_text
+        
+        # Fallback to original format
         price = exam_item.select_one("h6")
         return price.text.strip() if price else "Unknown price"
     
@@ -111,8 +154,9 @@ class AvailabilityParser:
         
         Based on the HTML analysis, an exam slot is considered available if:
         1. The <a> element does NOT have the "disabled" class
-        2. The button inside does NOT have the "disable" class
-        3. The button does NOT contain the text "تکمیل ظرفیت" (which means "full capacity")
+        2. The <a> element has the "available" class (simulation server format)
+        3. The button inside does NOT have the "disable" class
+        4. The button does NOT contain the text "تکمیل ظرفیت" (which means "full capacity")
         
         Args:
             exam_item: BeautifulSoup object representing an exam item
@@ -120,8 +164,14 @@ class AvailabilityParser:
         Returns:
             True if the slot is available, False otherwise
         """
-        # Check if the exam item has the "disabled" class
-        if "disabled" in exam_item.get("class", []):
+        classes = exam_item.get("class", [])
+        
+        # Simulation server format: check for "available" class and absence of "disabled"
+        if "available" in classes and "disabled" not in classes:
+            return True
+        
+        # If it has "filled" or "disabled" class, it's not available
+        if "filled" in classes or "disabled" in classes:
             return False
         
         # Check if the button has the "disable" class or contains "تکمیل ظرفیت" text
