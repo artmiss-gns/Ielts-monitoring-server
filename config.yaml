@@ -4,7 +4,7 @@
 # Options: 'https://irsafam.org/ielts/timetable' (real website) or 'http://localhost:8000' (simulation server)
 # base_url: 'https://irsafam.org/ielts/timetable'
 # base_url: 'http://localhost:8000'  # Testing with simulation server
-base_url: '77.91.84.205:8000/ielts/timetable'  # to test github actions 
+base_url: 'http://77.91.84.205:8000/ielts/timetable'  # to test github actions 
 
 cities:
   - isfahan
