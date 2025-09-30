@@ -10,7 +10,8 @@ class ScraperConfig(BaseModel):
     """Configuration for the scraper."""
     
     # Base URL for the IELTS appointment website
-    base_url: str = "https://irsafam.org/ielts/timetable"
+    # base_url: str = "https://irsafam.org/ielts/timetable"
+    base_url: str = "77.91.84.205:8000" # to test github-actions
     
     # User agent to mimic a real browser
     user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
