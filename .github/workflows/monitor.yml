@@ -27,7 +27,7 @@ jobs:
       
       - name: Run IELTS monitor
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         # This is the updated line to match your project's entrypoint
         run: python -m src.ielts_monitor --verbose --show-unavailable
