@@ -7,6 +7,7 @@ base_url: 'https://irsafam.org/ielts/timetable'
 
 cities:
   - isfahan
+  - tehran
 
 # Exam models to check (cdielts, pdielts)
 exam_models:
