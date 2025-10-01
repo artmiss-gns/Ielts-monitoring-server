@@ -8,6 +8,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
+    user: "${UID:-1000}:${GID:-1000}" # <-- FIX: Run as the host user to avoid permission errors
     container_name: ielts-monitor-app
     restart: unless-stopped
     env_file:
